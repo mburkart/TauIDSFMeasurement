@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
       {7, "mt_PtGt70"},
     };
   }
-  // STXS stage 1 categories (optimized on STXS stage 1 splits of ggH and VBF)
+  // pt and dm binned scale factors
   else if(categories == "ptdm_binned"){
      cats["mt"] = {
         { 1, "mt_Pt20to25_DM0"},
@@ -170,6 +170,14 @@ int main(int argc, char **argv) {
         {20, "mt_PtGt70_DM1"},
         {21, "mt_PtGt70_DM10"},
     };
+  }
+  else if (categories == "dm_binned"){
+      cats["mt"] = {
+          {1, "mt_DM0"},
+          {2, "mt_DM1"},
+          {3, "mt_DM10"},
+          {4, "mt_DM11"},
+      };
   }
   else throw std::runtime_error("Given categorization is not known.");
   cats["mm"] = {
