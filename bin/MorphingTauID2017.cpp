@@ -42,7 +42,6 @@ int main(int argc, char **argv) {
   string base_path = string(getenv("CMSSW_BASE")) + "/src/CombineHarvester/TauIDSFMeasurement/shapes";
   string input_folder_mt = "Vienna/";
   string input_folder_mm = "Vienna/";
-  string chan = "all";
   string postfix = "-ML";
   bool regional_jec = true;
   bool auto_rebin = false;
@@ -53,6 +52,7 @@ int main(int argc, char **argv) {
   bool embedding = false;
   bool classic_bbb = false;
   bool binomial_bbb = false;
+  bool use_control_region = true;
   bool verbose = false;
   string categories = "pt_binned"; // "pt_binned", "ptdm_binned"
   int era = 2016; // 2016 or 2017
@@ -63,7 +63,6 @@ int main(int argc, char **argv) {
       ("input_folder_mt", po::value<string>(&input_folder_mt)->default_value(input_folder_mt))
       ("input_folder_mm", po::value<string>(&input_folder_mm)->default_value(input_folder_mm))
       ("postfix", po::value<string>(&postfix)->default_value(postfix))
-      ("channel", po::value<string>(&chan)->default_value(chan))
       ("auto_rebin", po::value<bool>(&auto_rebin)->default_value(auto_rebin))
       ("rebin_categories", po::value<bool>(&rebin_categories)->default_value(rebin_categories))
       ("manual_rebin_for_yields", po::value<bool>(&manual_rebin_for_yields)->default_value(manual_rebin_for_yields))
@@ -76,6 +75,7 @@ int main(int argc, char **argv) {
       ("embedding", po::value<bool>(&embedding)->default_value(embedding))
       ("classic_bbb", po::value<bool>(&classic_bbb)->default_value(classic_bbb))
       ("binomial_bbb", po::value<bool>(&binomial_bbb)->default_value(binomial_bbb))
+      ("use_control_region", po::value<bool>(&use_control_region)->default_value(use_control_region))
       ("era", po::value<int>(&era)->default_value(era));
   po::store(po::command_line_parser(argc, argv).options(config).run(), vm);
   po::notify(vm);
@@ -84,15 +84,13 @@ int main(int argc, char **argv) {
   // source the input files containing the datacard shapes
   std::map<string, string> input_dir;
   input_dir["mt"] = base_path + "/" + input_folder_mt + "/";
+  input_dir["mm"] = base_path + "/" + input_folder_mm + "/";
 
   // Define channels
   VString chns;
-  if (chan.find("mt") != std::string::npos)
-    chns.push_back("mt");
-  if (chan.find("mm") != std::string::npos)
+  chns.push_back("mt");
+  if (use_control_region)
     chns.push_back("mm");
-  if (chan == "all")
-    chns = {"mt", "mm"};
 
   // Define background processes
   map<string, VString> bkg_procs;
@@ -104,9 +102,15 @@ int main(int argc, char **argv) {
   if(embedding){
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "TTT"), bkgs.end());
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "VVT"), bkgs.end());
+    bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "QCD"), bkgs.end());
+    bkgs = JoinStr({bkgs,{"QCDEMB"}});
+    bkgs_mm.erase(std::remove(bkgs_mm.begin(), bkgs_mm.end(), "ZLL"), bkgs_mm.end());
+    bkgs_mm.erase(std::remove(bkgs_mm.begin(), bkgs_mm.end(), "TT"), bkgs_mm.end());
+    bkgs_mm.erase(std::remove(bkgs_mm.begin(), bkgs_mm.end(), "VV"), bkgs_mm.end());
   }
   if(jetfakes){
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "QCD"), bkgs.end());
+    bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "QCDEMB"), bkgs.end());
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "W"), bkgs.end());
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "VVJ"), bkgs.end());
     bkgs.erase(std::remove(bkgs.begin(), bkgs.end(), "TTJ"), bkgs.end());
@@ -115,11 +119,9 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "[INFO] Considerung the following processes:\n";
-  if (chan.find("mt") != std::string::npos) {
-    std::cout << "For mt channel : \n";
-    for (unsigned int i=0; i < bkgs.size(); i++) std::cout << bkgs[i] << std::endl;
-  }
-  if (chan.find("mm") != std::string::npos) {
+  std::cout << "For mt channel : \n";
+  for (unsigned int i=0; i < bkgs.size(); i++) std::cout << bkgs[i] << std::endl;
+  if (use_control_region) {
     std::cout << "For mm channel : \n";
     for (unsigned int i=0; i < bkgs_mm.size(); i++) std::cout << bkgs_mm[i] << std::endl;
   }
@@ -436,7 +438,7 @@ int main(int argc, char **argv) {
                    .SetBinomialP(0.022)
                    .SetBinomialN(1000.0)
                    .SetFixNorm(false);
-    bbb.AddBinomialBinByBin(cb.cp().backgrounds(), cb);
+    bbb.AddBinomialBinByBin(cb.cp().channel({"em"}).process({"EMB"}), cb);
   }
 
 
@@ -469,11 +471,21 @@ int main(int argc, char **argv) {
     {
         continue;
     }
-    writer.WriteCards(chn, cb.cp().channel({chn,"mm"}));
+    if (use_control_region) {
+        writer.WriteCards(chn, cb.cp().channel({chn,"mm"}));
+    }
+    else {
+        writer.WriteCards(chn, cb.cp().channel({chn}));
+    }
     // per-category
     for (auto cat: cats[chn])
     {
-        writer.WriteCards("htt_"+cat.second, cb.cp().channel({chn, "mm"}).bin_id({cat.first, 100})); //.attr({cat.second,"control"}, "cat"));
+        if (use_control_region) {
+            writer.WriteCards("htt_"+cat.second, cb.cp().channel({chn, "mm"}).bin_id({cat.first, 100})); //.attr({cat.second,"control"}, "cat"));
+        }
+        else {
+            writer.WriteCards("htt_"+cat.second, cb.cp().channel({chn}).bin_id({cat.first, 100}));
+        }
     }
   }
 
