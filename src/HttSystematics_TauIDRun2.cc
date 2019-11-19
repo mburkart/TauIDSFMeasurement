@@ -135,52 +135,52 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
 
   cb.cp()
       .channel({"mt"})
-      .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}})
+      .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}})
       .AddSyst(cb, "CMS_scale_mc_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
+      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"})
       .AddSyst(cb, "CMS_scale_mc_t_1prong1pizero", "shape",
                SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
+      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"})
       .AddSyst(cb, "CMS_scale_mc_t_3prong", "shape", SystMap<>::init(0.71));
 
   // Embedded uncorrelated uncertainty
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes"})
+      .process({"EMB", "jetFakes", "QCDEMB"})
       .AddSyst(cb, "CMS_scale_emb_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes"})
+      .process({"EMB", "jetFakes", "QCDEMB"})
       .AddSyst(cb, "CMS_scale_emb_t_1prong1pizero", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes"})
+      .process({"EMB", "jetFakes", "QCDEMB"})
       .AddSyst(cb, "CMS_scale_emb_t_3prong", "shape", SystMap<>::init(0.71));
 
   // MC + embedded correlated uncertainty
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
       .AddSyst(cb, "CMS_scale_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
       .AddSyst(cb, "CMS_scale_t_1prong1pizero", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
       .AddSyst(cb, "CMS_scale_t_3prong", "shape", SystMap<>::init(0.71));
 
   // ##########################################################################
@@ -220,7 +220,7 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
         .process(mc_processes)
         .AddSyst(cb, "CMS_scale_j_RelativeBal", "shape", SystMap<>::init(1.00));
         
-    if (era == 2017) {
+    if (era == 2017 || era == 2018) {
       cb.cp()
 	  .channel({"mt"})
           .process(mc_processes)
@@ -290,19 +290,27 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
       .AddSyst(cb, "CMS_htt_wjXsec_mm", "lnN", SystMap<>::init(1.05));
 
   // Z
-  cb.cp()
-      .channel({"mt"})
-      .process({"ZTT", "ZL", "ZJ"})
-      .AddSyst(cb, "CMS_htt_zjXsec", "rateParam", SystMap<>::init(0.976460));
-  cb.cp()
-      .channel({"mm"})
-      .process({"ZLL"})
-      .AddSyst(cb, "CMS_htt_zjXsec", "rateParam", SystMap<>::init(0.976460));
+  if (embedding) {
+      cb.cp()
+          .channel({"mt"})
+          .process({"ZL", "ZJ"})
+          .AddSyst(cb, "CMS_htt_zjXsec", "lnN", SystMap<>::init(1.04));
+  }
+  else {
+      cb.cp()
+          .channel({"mt"})
+          .process({"ZTT", "ZL", "ZJ"})
+          .AddSyst(cb, "CMS_htt_zjXsec", "rateParam", SystMap<>::init(1.00));
+      cb.cp()
+          .channel({"mm"})
+          .process({"ZLL"})
+          .AddSyst(cb, "CMS_htt_zjXsec", "rateParam", SystMap<>::init(1.00));
+  }
 
   // QCD
   cb.cp()
       .channel({"mt"})
-      .process({"QCD"})
+      .process({"QCD", "QCDEMB"})
       .AddSyst(cb, "CMS_ExtrapSSOS_$CHANNEL_$ERA", "lnN", SystMap<>::init(1.30));
 
   // ##########################################################################
