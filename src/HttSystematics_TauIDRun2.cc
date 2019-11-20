@@ -135,52 +135,55 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
 
   cb.cp()
       .channel({"mt"})
-      .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}})
+      .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}})
+      // .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}}) // TODO: Check if this should be propagated to QCD
       .AddSyst(cb, "CMS_scale_mc_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"})
+      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
       .AddSyst(cb, "CMS_scale_mc_t_1prong1pizero", "shape",
                SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"})
+      .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
       .AddSyst(cb, "CMS_scale_mc_t_3prong", "shape", SystMap<>::init(0.71));
 
   // Embedded uncorrelated uncertainty
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes", "QCDEMB"})
+      // .process({"EMB", "jetFakes", "QCDEMB"})
+      .process({"EMB", "jetFakes"})
       .AddSyst(cb, "CMS_scale_emb_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes", "QCDEMB"})
+      .process({"EMB", "jetFakes"})
       .AddSyst(cb, "CMS_scale_emb_t_1prong1pizero", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process({"EMB", "jetFakes", "QCDEMB"})
+      .process({"EMB", "jetFakes"})
       .AddSyst(cb, "CMS_scale_emb_t_3prong", "shape", SystMap<>::init(0.71));
 
   // MC + embedded correlated uncertainty
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
+      // .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
       .AddSyst(cb, "CMS_scale_t_1prong", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
       .AddSyst(cb, "CMS_scale_t_1prong1pizero", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
-      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}, {"EMB", "QCDEMB"}}))
+      .process(JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}, {"EMB"}}))
       .AddSyst(cb, "CMS_scale_t_3prong", "shape", SystMap<>::init(0.71));
 
   // ##########################################################################
