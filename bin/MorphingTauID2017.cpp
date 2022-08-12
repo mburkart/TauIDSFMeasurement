@@ -145,40 +145,43 @@ int main(int argc, char **argv) {
   // Define categories
   map<string, Categories> cats;
   // TODO: Introduce maps for decay mode dependent splitting.
-  if (categories == "inclusive") {
-    cats["mt"] = {
-        {100, "mt_Inclusive"},
-    };
-  } else if (categories == "pt_binned") {
+  if (categories == "all") {
     cats["mt"] = {
         {1, "mt_Pt20to25"}, {2, "mt_Pt25to30"}, {3, "mt_Pt30to35"},
-        {4, "mt_Pt35to40"}, {5, "mt_PtGt40"},
-    };
-  }
-  // pt and dm binned scale factors
-  else if (categories == "ptdm_binned") {
-    cats["mt"] = {
-        {1, "mt_Pt20to25_DM0"},   {2, "mt_Pt20to25_DM1"},
-        {3, "mt_Pt20to25_DM10"},  {4, "mt_Pt25to30_DM0"},
-        {5, "mt_Pt25to30_DM1"},   {6, "mt_Pt25to30_DM10"},
-        {7, "mt_Pt30to35_DM0"},   {8, "mt_Pt30to35_DM1"},
-        {9, "mt_Pt30to35_DM10"},  {10, "mt_Pt35to40_DM0"},
-        {11, "mt_Pt35to40_DM1"},  {12, "mt_Pt35to40_DM10"},
-        {13, "mt_Pt40to50_DM0"},  {14, "mt_Pt40to50_DM1"},
-        {15, "mt_Pt40to50_DM10"}, {16, "mt_Pt50to70_DM0"},
-        {17, "mt_Pt50to70_DM1"},  {18, "mt_Pt50to70_DM10"},
-        {19, "mt_PtGt70_DM0"},    {20, "mt_PtGt70_DM1"},
-        {21, "mt_PtGt70_DM10"},
-    };
-  } else if (categories == "dm_binned") {
-    cats["mt"] = {
-        {8, "mt_DM0"},
-        {9, "mt_DM1"},
-        {10, "mt_DM10"},
-        {11, "mt_DM11"},
+        {4, "mt_Pt35to40"}, {5, "mt_PtGt40"},   {6, "mt_Inclusive"},
+        {7, "mt_DM0"},      {8, "mt_DM1"},      {9, "mt_DM10_11"},
     };
   } else
     throw std::runtime_error("Given categorization is not known.");
+  // else if (categories == "pt_binned") {
+  //   cats["mt"] = {
+  //       {1, "mt_Pt20to25"}, {2, "mt_Pt25to30"}, {3, "mt_Pt30to35"},
+  //       {4, "mt_Pt35to40"}, {5, "mt_PtGt40"},
+  //   };
+  // }
+  // // pt and dm binned scale factors
+  // else if (categories == "ptdm_binned") {
+  //   cats["mt"] = {
+  //       {1, "mt_Pt20to25_DM0"},   {2, "mt_Pt20to25_DM1"},
+  //       {3, "mt_Pt20to25_DM10"},  {4, "mt_Pt25to30_DM0"},
+  //       {5, "mt_Pt25to30_DM1"},   {6, "mt_Pt25to30_DM10"},
+  //       {7, "mt_Pt30to35_DM0"},   {8, "mt_Pt30to35_DM1"},
+  //       {9, "mt_Pt30to35_DM10"},  {10, "mt_Pt35to40_DM0"},
+  //       {11, "mt_Pt35to40_DM1"},  {12, "mt_Pt35to40_DM10"},
+  //       {13, "mt_Pt40to50_DM0"},  {14, "mt_Pt40to50_DM1"},
+  //       {15, "mt_Pt40to50_DM10"}, {16, "mt_Pt50to70_DM0"},
+  //       {17, "mt_Pt50to70_DM1"},  {18, "mt_Pt50to70_DM10"},
+  //       {19, "mt_PtGt70_DM0"},    {20, "mt_PtGt70_DM1"},
+  //       {21, "mt_PtGt70_DM10"},
+  //   };
+  // } else if (categories == "dm_binned") {
+  //   cats["mt"] = {
+  //       {6, "mt_DM0"},
+  //       {7, "mt_DM1"},
+  //       {8, "mt_DM10_11"},
+  //   };
+  // } else
+  //   throw std::runtime_error("Given categorization is not known.");
   cats["mm"] = {
       {100, "mm_control"},
   };
@@ -186,14 +189,11 @@ int main(int argc, char **argv) {
   // Specify signal processes and masses
   vector<string> sig_procs;
   // STXS stage 0: ggH and VBF processes
-  if (embedding)
+  if (embedding) {
     sig_procs = {"EMB"};
-  // STXS stage 1: Splits of ggH and VBF processes
-  // References:
-  // - https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHXSWGFiducialAndSTXS
-  // - https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHXSWG2
-  else
+  } else {
     sig_procs = {"ZTT"};
+  }
   vector<string> masses = {"125"};
 
   // Create combine harverster object
@@ -238,6 +238,11 @@ int main(int argc, char **argv) {
                            "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
       }
     }
+    std::cout << "[INFO] Extracted shapes for channel " << chn << std::endl;
+    std::cout << "[INFO] Used input file  "
+              << input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag +
+                     postfix + ".root"
+              << std::endl;
     // TODO: Uncomment for check of mm fit to obtain start value for full fit.
     // if (chn == "mm") {
     //     cb.cp().channel({chn}).bin_id({static_cast<int>(100)}).process(sig_procs).ExtractShapes(
@@ -515,8 +520,10 @@ int main(int argc, char **argv) {
       if (use_control_region) {
         writer.WriteCards(
             "htt_" + cat.second,
-            cb.cp().channel({chn, "mm"}).bin_id({cat.first, 100})); //.attr({cat.second,"control"},
-                                                                    //"cat"));
+            cb.cp()
+                .channel({chn, "mm"})
+                .bin_id({cat.first, 100})); //.attr({cat.second,"control"},
+                                            //"cat"));
       } else {
         writer.WriteCards("htt_" + cat.second,
                           cb.cp().channel({chn}).bin_id({cat.first, 100}));
