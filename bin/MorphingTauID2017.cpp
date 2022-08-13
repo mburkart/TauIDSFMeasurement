@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   map<string, VString> bkg_procs;
   VString bkgs, bkgs_mm;
   bkgs = {"W", "QCD", "ZL", "ZJ", "TTT", "TTL", "TTJ", "VVJ", "VVT", "VVL"};
-  bkgs_mm = {"W", "ZLL", "TT", "VV"};
+
   // bkgs_mm = {"W", "TT", "VV"};
 
   if (embedding) {
@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
     bkgs = JoinStr({bkgs, {"jetFakes"}});
   }
 
+  bkgs_mm = {"W", "ZL", "TTL", "VVL"};
   std::cout << "[INFO] Considerung the following processes:\n";
   std::cout << "For mt channel : \n";
   for (unsigned int i = 0; i < bkgs.size(); i++)
@@ -183,7 +184,7 @@ int main(int argc, char **argv) {
   // } else
   //   throw std::runtime_error("Given categorization is not known.");
   cats["mm"] = {
-      {100, "mm_control"},
+      {100, "mm_control_region"},
   };
 
   // Specify signal processes and masses
@@ -244,12 +245,13 @@ int main(int argc, char **argv) {
                      postfix + ".root"
               << std::endl;
     // TODO: Uncomment for check of mm fit to obtain start value for full fit.
-    // if (chn == "mm") {
-    //     cb.cp().channel({chn}).bin_id({static_cast<int>(100)}).process(sig_procs).ExtractShapes(
-    //         input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix
-    //         + ".root",
-    //         "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
-    // }
+    if (chn == "mm") {
+        sig_procs = {"ZL"};
+        cb.cp().channel({chn}).bin_id({static_cast<int>(100)}).process(sig_procs).ExtractShapes(
+            input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix
+            + ".root",
+            "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
+    }
   }
 
   // Delete processes with 0 yield
