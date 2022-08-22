@@ -5,7 +5,7 @@
 namespace ch {
 // Run2 SM analysis systematics
 // Implemented in src/HttSystematics_SMRun2.cc
-void AddTauIDRun2Systematics(CombineHarvester& cb, bool jetfakes, bool embedding, bool regional_jec, int era);
+void AddTauIDRun2Systematics(CombineHarvester& cb, bool jetfakes, bool embedding, bool regional_jec, int era, bool tauES=false);
 }
 
 #endif
