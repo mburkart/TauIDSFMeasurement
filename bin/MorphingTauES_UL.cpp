@@ -9,6 +9,7 @@
 #include "CombineHarvester/CombineTools/interface/Systematics.h"
 #include "CombineHarvester/CombineTools/interface/Utilities.h"
 #include "CombineHarvester/SMRun2Legacy/interface/BinomialBinByBin.h"
+#include "CombineHarvester/TauIDSFMeasurement/interface/HttSystematics_TauIDRun2.h"
 #include "RooRealVar.h"
 #include "RooWorkspace.h"
 #include "TF1.h"
@@ -25,6 +26,7 @@
 #include <utility>
 #include <vector>
 #include <math.h>
+#include <sstream>
 
 using namespace std;
 using boost::starts_with;
@@ -38,7 +40,7 @@ using ch::JoinStr;
 using namespace ch;
 namespace po = boost::program_options;
 
-bool debug=false;
+bool debug=true;
 void dout() {
     if (debug) std::cout << std::endl;
 }
@@ -58,6 +60,14 @@ void printVectorInVector(const T& t) {
 template <class T>
 bool contains(std::vector<T> const &v, T const &x) {
     return ! (v.empty() && std::find(v.begin(), v.end(), x) == v.end());
+}
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return out.str();
 }
 
 
@@ -84,7 +94,7 @@ int main(int argc, char **argv) {
   bool train_stage0 = false;
   bool classic_bbb = false;
   bool binomial_bbb = false;
-  bool verbose = false;
+  bool verbose = true;
   bool remove_empty_categories = false;
   string stxs_signals = "stxs_stage0"; // "stxs_stage0" or "stxs_stage1p1"
   string categories = "stxs_stage0"; // "stxs_stage0", "stxs_stage1p1" or "gof"
@@ -119,10 +129,17 @@ int main(int argc, char **argv) {
   po::notify(vm);
   
   // Prepering the combine run
-  RooRealVar taues("taues", "taues", -1.0, -2.4, 1.6);
+  double lower_limit = -1.2;
+  double upper_limit = 1.1;
+  RooRealVar taues("taues", "taues", -1.0, lower_limit, upper_limit);
   vector<string> energy_scales;
 
-  energy_scales = {"-2.4","-2.2","-2.0","-1.8","-1.6","-1.50","-1.45","-1.4","-1.35","-1.30","-1.25","-1.2","-1.15","-1.10", "-1.05", "-1.0","-0.95", "-0.90","-0.85", "-0.8", "-0.75", "-0.7","-0.65","-0.6","-0.55","-0.5","-0.45" , "-0.4","-0.35","-0.3","-0.25", "-0.2","-0.15","-0.10", "-0.05","0.0", "0.2","0.4", "0.6","0.8","1.0","1.2","1.4","1.6"};
+  // energy_scales = {"-2.4","-2.2","-2.0","-1.8","-1.6","-1.50","-1.45","-1.4","-1.35","-1.30","-1.25","-1.2","-1.15","-1.10", "-1.05", "-1.0","-0.95", "-0.90","-0.85", "-0.8", "-0.75", "-0.7","-0.65","-0.6","-0.55","-0.5","-0.45" , "-0.4","-0.35","-0.3","-0.25", "-0.2","-0.15","-0.10", "-0.05","0.0", "0.2","0.4", "0.6","0.8","1.0","1.2","1.4","1.6"};
+  // energy scales vector goes from -1.2 to 1.1 in 0.05 steps
+  // energy_scales = {"-1.2", "-1.15", "-1.1", "-1.05", "-1.0", "-0.95", "-0.9", "-0.85", "-0.8", "-0.75", "-0.7", "-0.65", "-0.6", "-0.55", "-0.5", "-0.45", "-0.4", "-0.35", "-0.3", "-0.25", "-0.2", "-0.15", "-0.1", "-0.05", "0.0", "0.05", "0.1", "0.15", "0.2", "0.25", "0.3", "0.35", "0.4", "0.45", "0.5", "0.55", "0.6", "0.65", "0.7", "0.75", "0.8", "0.85", "0.9", "0.95", "1.0", "1.05", "1.1"};
+  energy_scales = {"-2.5", "-2.4", "-2.3", "-2.2", "-2.1", "-2.0", "-1.9", "-1.8", "-1.7", "-1.6", "-1.5", "-1.4", "-1.3", "-1.2", "-1.1", "-1.0", "-0.9", "-0.8", "-0.7", "-0.6", "-0.5", "-0.4", "-0.3", "-0.2", "-0.1", "0.0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "2.0", "2.1", "2.2", "2.3", "2.4", "2.5"};
+  // energy_scales = {"-1.0", "-0.5", "0.0", "0.5", "1.0"};
+
   // Define channels
   VString chns;
   chns.push_back("mt");
@@ -131,7 +148,7 @@ int main(int argc, char **argv) {
   map<string, VString> bkg_procs;
   VString bkgs;
 
-  bkgs = {"ZL", "TTL", "VVL","jetFakes"};
+  bkgs = {"ZL", "TTL", "VVL"};
 
   std::cout << "[INFO] Considerung the following processes:\n";
   std::cout << "For mt channel : \n";
@@ -143,7 +160,12 @@ int main(int argc, char **argv) {
   std::vector<std::string> cats_to_keep; // will be used later for the card writer
   for (auto chn : chns){
       cats[chn]={
-        { 1, chn+"_m_vis"},
+        { 6, chn+"_Inclusive"},
+        { 7, chn+"_DM0"},
+        { 8, chn+"_DM1"},
+        { 9, chn+"_DM10_11"},
+        // { 10, chn+"_DM10"},
+        // { 11, chn+"_DM11"},
       };
   }
   for (auto chn : chns){
@@ -166,6 +188,8 @@ int main(int argc, char **argv) {
 
   for (auto chn : chns) {
     cb.AddObservations({"*"}, {"htt"}, {era_tag}, {chn}, cats[chn]);
+    cb.AddProcesses(energy_scales, {"htt"}, {era_tag}, {chn}, {"jetFakes"}, cats[chn],
+                    false);
     cb.AddProcesses({"*"}, {"htt"}, {era_tag}, {chn}, bkg_procs[chn], cats[chn],
                     false);
     cb.AddProcesses(energy_scales, {"htt"}, {era_tag}, {chn}, sig_procs, cats[chn],
@@ -174,107 +198,155 @@ int main(int argc, char **argv) {
   //auto signal = Set2Vec(cb.cp().signals().SetFromProcs(std::mem_fn(&Process::process)));
 
   // Add systematics
+  ch::AddTauIDRun2Systematics(cb, true, true, true, era, true);
+//   // MC uncertainties:
+//   // lumi
+//   float lumi_unc = 1.025;
+//   if (era == 2017) lumi_unc = 1.023;
+//   cb.cp()
+//       .process({"ZL", "TTL", "VVL"})
+//       .AddSyst(cb, "lumi", "lnN", SystMap<>::init(lumi_unc));
+//   cb.cp()
+//       .process({"EMB"})
+//       .AddSyst(cb, "embnorm", "lnN", SystMap<>::init(1.04));
+//   // VV
+//   cb.cp()
+//       .process({"VVL"})
+//       .AddSyst(cb, "vvlXsec", "lnN", SystMap<>::init(1.05));
+//   // Z
+//   cb.cp()
+//       .process({"ZL"})
+//       .AddSyst(cb, "zlXsec", "lnN", SystMap<>::init(1.04));
+//   // TT
+//   cb.cp()
+//       .process({"TTL"})
+//       .AddSyst(cb, "ttlXsec", "lnN", SystMap<>::init(1.06));
+//   // Muon fakes
+//   cb.cp()
+//       .channel({"mt"})
+//       .process({"ZL"})
+//       .AddSyst(cb, "CMS_mFakeTau_$ERA", "lnN", SystMap<>::init(1.25));
+//   // Embedding Uncertainties
 
-  // MC uncertainties:
-  // lumi
-  float lumi_unc = 1.025;
-  if (era == 2017) lumi_unc = 1.023;
-  cb.cp()
-      .process({"ZL", "TTL", "VVL"})
-      .AddSyst(cb, "lumi", "lnN", SystMap<>::init(lumi_unc));
-  cb.cp()
-      .process({"EMB"})
-      .AddSyst(cb, "embnorm", "lnN", SystMap<>::init(1.04));
-  // VV
-  cb.cp()
-      .process({"VVL"})
-      .AddSyst(cb, "vvlXsec", "lnN", SystMap<>::init(1.05));
-  // Z
-  cb.cp()
-      .process({"ZL"})
-      .AddSyst(cb, "zlXsec", "lnN", SystMap<>::init(1.04));
-  // TT
-  cb.cp()
-      .process({"TTL"})
-      .AddSyst(cb, "ttlXsec", "lnN", SystMap<>::init(1.06));
-  // Muon fakes
-  cb.cp()
-      .channel({"mt"})
-      .process({"ZL"})
-      .AddSyst(cb, "CMS_mFakeTau_$ERA", "lnN", SystMap<>::init(1.25));
-  // Embedding Uncertainties
+//   // Embedded Tau ID in 5 pt bins
+//   std::string tauIDptbins[5] = {"30-35", "35-40", "40-500", "500-1000", "1000-inf"};
+//   for (auto tauIDbin : tauIDptbins){
+//     cb.cp()
+//         .process({"EMB"})
+//         .AddSyst(cb, "CMS_eff_emb_t_"+tauIDbin+"_$ERA", "shape", SystMap<>::init(1));
+//   }
+//   cb.cp()
+//       .process({"EMB"})
+//       .AddSyst(cb, "emb_t_$CHANNEL_$ERA", "lnN", SystMap<>::init(1.01));
+//   // Muon ID
+//   cb.cp()
+//       .process({"ZL", "TTL", "VVL","EMB"})
+//       .AddSyst(cb, "CMS_eff_m", "lnN", SystMap<>::init(1.02));
+//     // TTbar contamination
+//   // cb.cp()
+//   //   .process({"EMB"})
+//   //   .AddSyst(cb, "emb_ttbar_$ERA", "shape", SystMap<>::init(1.00));
+//   // hadronic tau track efficiency 
+//   cb.cp()
+//     .process({"EMB"})
+//     .AddSyst(cb, "CMS_3ProngEff_$ERA", "shape", SystMap<>::init(1.00));
+//   cb.cp()
+//     .process({"EMB"})
+//     .AddSyst(cb, "CMS_1ProngPi0Eff_$ERA", "shape", SystMap<>::init(1.00));
+//   // Jet Fake Stuff
+// // QCD shape stat.
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_qcd_njet0_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_qcd_njet1_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
 
-  // Embedded Tau ID in 5 pt bins
-  std::string tauIDptbins[5] = {"30-35", "35-40", "40-500", "500-1000", "1000-inf"};
-  for (auto tauIDbin : tauIDptbins){
-    cb.cp()
-        .process({"EMB"})
-        .AddSyst(cb, "CMS_eff_emb_t_"+tauIDbin+"_$ERA", "shape", SystMap<>::init(1));
-  }
-  cb.cp()
-      .process({"EMB"})
-      .AddSyst(cb, "emb_t_$CHANNEL_$ERA", "lnN", SystMap<>::init(1.01));
-  // Muon ID
-  cb.cp()
-      .process({"ZL", "TTL", "VVL","EMB"})
-      .AddSyst(cb, "CMS_eff_m", "lnN", SystMap<>::init(1.02));
-    // TTbar contamination 
-  // cb.cp()
-  //   .process({"EMB"})
-  //   .AddSyst(cb, "emb_ttbar_$ERA", "shape", SystMap<>::init(1.00));
-  // hadronic tau track efficiency 
-  cb.cp()
-    .process({"EMB"})
-    .AddSyst(cb, "CMS_3ProngEff_$ERA", "shape", SystMap<>::init(1.00));
-  cb.cp()
-    .process({"EMB"})
-    .AddSyst(cb, "CMS_1ProngPi0Eff_$ERA", "shape", SystMap<>::init(1.00));
-  // Jet Fake Stuff
-// QCD shape stat.
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_qcd_njet0_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_qcd_njet1_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
+//   // W shape stat.
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_w_njet0_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_w_njet1_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
 
-  // W shape stat.
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_w_njet0_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_w_njet1_$CHANNEL_stat_$ERA", "shape", SystMap<>::init(1.00));
+//   // TT shape stat.
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_tt_njet1_stat_$ERA", "shape", SystMap<>::init(1.00));
 
-  // TT shape stat.
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_tt_njet1_stat_$ERA", "shape", SystMap<>::init(1.00));
-
-  // Shape syst. of different contributions (QCD/W/tt)
-  // uncorrelated between eras
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_qcd_mt_syst_$ERA", "shape", SystMap<>::init(1.00));
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_w_syst_$ERA", "shape", SystMap<>::init(1.00));
-  cb.cp()
-      .process({"jetFakes"})
-      .AddSyst(cb, "CMS_ff_tt_syst_$ERA", "shape", SystMap<>::init(1.00));
+//   // Shape syst. of different contributions (QCD/W/tt)
+//   // uncorrelated between eras
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_qcd_mt_syst_$ERA", "shape", SystMap<>::init(1.00));
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_w_syst_$ERA", "shape", SystMap<>::init(1.00));
+//   cb.cp()
+//       .process({"jetFakes"})
+//       .AddSyst(cb, "CMS_ff_tt_syst_$ERA", "shape", SystMap<>::init(1.00));
   // Define the location of the "auxiliaries" directory where we can
   // source the input files containing the datacard shapes
   std::map<string, string> input_dir;
   input_dir["mt"] = base_path + "/" + input_folder_mt + "/";
   // Extract shapes from input ROOT files
   for (string chn : chns) {
-    cb.cp().channel({chn}).backgrounds().ExtractShapes(
-        input_dir[chn] + std::to_string(era) + midfix + chn + "-synced"+postfix+ ".root",
+    cb.cp()
+      .channel({chn})
+      .process(bkg_procs[chn])
+      .ExtractShapes(
+        input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix +
+            ".root",
         "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
-    cb.cp().channel({chn}).process(sig_procs).ExtractShapes(
-        input_dir[chn] + std::to_string(era) + midfix + chn + "-synced"+postfix+ ".root",
+    cb.cp()
+      .process({"jetFakes"})
+      .ExtractShapes(
+        input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix +
+            ".root",
         "$BIN/$PROCESS_$MASS", "$BIN/$PROCESS_$MASS_$SYSTEMATIC");
-  }
+
+      cb.cp()
+        .channel({chn})
+        .process(sig_procs)
+        .ExtractShapes(
+          input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix +
+            ".root",
+        "$BIN/$PROCESS_$MASS", "$BIN/$PROCESS_$MASS_$SYSTEMATIC");
+    }
+
+    // Delete processes with 0 yield
+  cb.FilterProcs([&](ch::Process *p) {
+    bool null_yield = !(p->rate() > 0.0);
+    if (null_yield) {
+      std::cout << "[WARNING] Removing process with null yield: \n ";
+      std::cout << ch::Process::PrintHeader << *p << "\n";
+      cb.FilterSysts([&](ch::Systematic *s) {
+        bool remove_syst = (MatchingProcess(*p, *s));
+        return remove_syst;
+      });
+    }
+    return null_yield;
+  });
+
+
+  // Modify systematic variations with yield <= 0
+  cb.FilterSysts([&](ch::Systematic *s) {
+    // For remaining processes: Delete systematics since these result in a bogus norm error in combine for the remaining
+    if (s->type() == "shape") {
+      if (s->shape_u()->Integral() <= 0.0) {
+        std::cout << "[WARNING] Removing systematic with null yield in up shift:" << std::endl;
+        std::cout << ch::Systematic::PrintHeader << *s << "\n";
+        return true;
+      }
+      if (s->shape_d()->Integral() <= 0.0) {
+        std::cout << "[WARNING] Removing systematic with null yield in down shift:" << std::endl;
+        std::cout << ch::Systematic::PrintHeader << *s << "\n";
+        return true;
+      }
+    }
+    return false;
+  });
 
   // Replacing observation with the sum of the backgrounds (Asimov data)
   // useful to be able to check this, so don't do the replacement
@@ -314,19 +386,23 @@ int main(int argc, char **argv) {
 
   // At this point we can fix the negative bins
   std::cout << "[INFO] Fixing negative bins.\n";
-  cb.ForEachProc([](ch::Process *p) {
+  cb.cp().ForEachProc([](ch::Process *p) {
     if (ch::HasNegativeBins(p->shape())) {
+      std::cout << "[WARNING] Fixing negative bins for process: \n ";
+      std::cout << ch::Process::PrintHeader << *p << "\n";
       auto newhist = p->ClonedShape();
       ch::ZeroNegativeBins(newhist.get());
       p->set_shape(std::move(newhist), false);
     }
   });
 
-  cb.ForEachSyst([](ch::Systematic *s) {
+  cb.cp().ForEachSyst([](ch::Systematic *s) {
     if (s->type().find("shape") == std::string::npos)
       return;
     if (ch::HasNegativeBins(s->shape_u()) ||
         ch::HasNegativeBins(s->shape_d())) {
+      std::cout << "[WARNING] Fixing negative bins for systematic: \n ";
+      std::cout << ch::Systematic::PrintHeader << *s << "\n";
       auto newhist_u = s->ClonedShapeU();
       auto newhist_d = s->ClonedShapeD();
       ch::ZeroNegativeBins(newhist_u.get());
@@ -339,31 +415,32 @@ int main(int argc, char **argv) {
   if (classic_bbb) {
     auto bbb = ch::BinByBinFactory()
                    .SetAddThreshold(0.0)
-                   .SetMergeThreshold(0.5)
+                   .SetMergeThreshold(0.0)
                    .SetFixNorm(false);
-    //bbb.MergeBinErrors(cb.cp().backgrounds());
+    bbb.MergeBinErrors(cb.cp().backgrounds());
     bbb.AddBinByBin(cb.cp().backgrounds(), cb);
-    //bbb.MergeBinErrors(cb.cp().signals());
     bbb.AddBinByBin(cb.cp().signals(), cb);
   }
   if (binomial_bbb) {
-    auto bbb = ch::BinomialBinByBinFactory()
-                   .SetPattern("CMS_$ANALYSIS_$CHANNEL_$BIN_$ERA_$PROCESS_binomial_bin_$#")
-                   .SetBinomialP(0.022)
-                   .SetBinomialN(1000.0)
-                   .SetFixNorm(false);
-    bbb.AddBinomialBinByBin(cb.cp().channel({"mt"}).process({"EMB"}), cb);
+    auto bbb =
+        ch::BinomialBinByBinFactory()
+            .SetPattern(
+                "CMS_$ANALYSIS_$CHANNEL_$BIN_$ERA_$PROCESS_binomial_bin_$#")
+            .SetBinomialP(0.022)
+            .SetBinomialN(1000.0)
+            .SetFixNorm(false);
+    bbb.AddBinomialBinByBin(cb.cp().channel({"em"}).process({"EMB"}), cb);
   }
 
   // This function modifies every entry to have a standardised bin name of
   // the form: {analysis}_{channel}_{bin_id}_{era}
   ch::SetStandardBinNames(cb, "$ANALYSIS_$CHANNEL_$BINID_$ERA");
   
-  
+
   dout("First we generate a set of bin names:");
   RooWorkspace ws("htt", "htt");
-  string demo_file = "htt_mssm_demo.root";
-  TFile demo(demo_file.c_str(), "RECREATE");
+  // string demo_file = "htt_mssm_demo.root";
+  // TFile demo(demo_file.c_str(), "RECREATE");
   bool do_morphing = true;
   if (do_morphing)
   {
@@ -377,17 +454,19 @@ int main(int argc, char **argv) {
               ch::BuildRooMorphing(ws, cb, b, p, taues, "norm", true, true, false, NULL);
               // ch::BuildRooMorphing(ws, cb, b, p, faketaues, "norm", true, true, true, NULL);
           }
+          ch::BuildRooMorphing(ws, cb, b, "jetFakes", taues, "norm", true, true, false, NULL);
       }
   }
 
-  ws.var("taues")->setVal(1.0);
+  ws.var("taues")->setVal(0.0);
   // ws.var("CMS_th1x_htt_et_2_13TeV")->setVal(0.0);
 
-  demo.Close();
+  // demo.Close();
   dout("AddWorkspace:");
   cb.AddWorkspace(ws);
   dout("ExtractPdfs:");
   cb.cp().process({"EMB"}).ExtractPdfs(cb, "htt", "$BIN_$PROCESS_morph");
+  cb.cp().process({"jetFakes"}).ExtractPdfs(cb, "htt", "$BIN_$PROCESS_morph");
   dout("cb.PrintAll():");
   cb.PrintAll();
 
@@ -397,8 +476,8 @@ int main(int argc, char **argv) {
   // Write out datacards. Naming convention important for rest of workflow. We
   // make one directory per chn-cat, one per chn and cmb. In this code we only
   // store the individual datacards for each directory to be combined later.
-  ch::CardWriter writer(output_folder + "/$TAG/$MASS/$BIN.txt",
-    output_folder +"/$TAG/common/htt_input_" + era_tag + ".root");
+  ch::CardWriter writer(output_folder + "/$TAG/$BIN.txt",
+    output_folder +"/$TAG/htt_input_" + era_tag + ".root");
 
   // We're not using mass as an identifier - which we need to tell the
   // CardWriter
@@ -414,6 +493,10 @@ int main(int argc, char **argv) {
 
   for (auto chn : chns) {
     writer.WriteCards(chn, cb.cp().channel({chn}));
+    for (auto cat : cats[chn]) {
+        writer.WriteCards("htt_" + cat.second,
+                          cb.cp().channel({chn}).bin_id({cat.first, 100}));
+      }
   }
 
   if (verbose)
