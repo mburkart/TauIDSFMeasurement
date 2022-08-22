@@ -154,23 +154,23 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
       .channel({"mt"})
       .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"}})
       // .process({{"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes", "QCD"}}) // TODO: Check if this should be propagated to QCD
-      .AddSyst(cb, "CMS_scale_t_1prong_$ERA", "shape", SystMap<>::init(1.00));
+      .AddSyst(cb, "CMS_scale_t_1prong_$ERA", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
       .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
       .AddSyst(cb, "CMS_scale_t_1prong1pizero_$ERA", "shape",
-               SystMap<>::init(1.00));
+               SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
       .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
-      .AddSyst(cb, "CMS_scale_t_3prong_$ERA", "shape", SystMap<>::init(1.00));
+      .AddSyst(cb, "CMS_scale_t_3prong_$ERA", "shape", SystMap<>::init(0.71));
 
   cb.cp()
       .channel({"mt"})
       .process({"ZTT", "TTT", "TTL", "VVT", "VVL", "jetFakes"})
-      .AddSyst(cb, "CMS_scale_t_3prong1pizero_$ERA", "shape", SystMap<>::init(1.00));
+      .AddSyst(cb, "CMS_scale_t_3prong1pizero_$ERA", "shape", SystMap<>::init(0.71));
 
   // Embedded uncorrelated uncertainty
 // TODO check EMB ES
@@ -296,10 +296,10 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
   // - FIXME: References?
   // ##########################################################################
 
-//   cb.cp()
-//       .channel({"mt"})
-//       .process({"ZTT", "TT", "TTT", "TTL", "TTJ", "W", "ZJ", "ZL", "VV", "VVT", "VVL", "VVJ", "ST"})  //Z and W processes are only included due to the EWK fraction. Make sure that there is no contribution to the shift from the DY or Wjets samples.
-//       .AddSyst(cb, "CMS_scale_met_unclustered_$ERA", "shape", SystMap<>::init(1.00));
+  cb.cp()
+      .channel({"mt"})
+      .process({"ZTT", "TT", "TTT", "TTL", "TTJ", "W", "ZJ", "ZL", "VV", "VVT", "VVL", "VVJ", "ST"})  //Z and W processes are only included due to the EWK fraction. Make sure that there is no contribution to the shift from the DY or Wjets samples.
+      .AddSyst(cb, "CMS_scale_met_unclustered_$ERA", "shape", SystMap<>::init(1.00));
   cb.cp()
       .channel({"mt"})
       .process({"ZTT", "ZL", "ZJ", "W"})
@@ -380,10 +380,10 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
   // - FIXME: References?
   // ##########################################################################
 
-//   cb.cp()
-//       .channel({"mt"})
-//       .process({"ZTT", "ZL", "ZJ"})
-//       .AddSyst(cb, "CMS_htt_dyShape_$ERA", "shape", SystMap<>::init(0.10));
+  cb.cp()
+      .channel({"mt"})
+      .process({"ZTT", "ZL", "ZJ"})
+      .AddSyst(cb, "CMS_htt_dyShape_$ERA", "shape", SystMap<>::init(0.10));
 
   // ##########################################################################
   // Uncertainty: TT shape reweighting
