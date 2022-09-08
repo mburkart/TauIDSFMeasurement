@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     bkgs = JoinStr({bkgs, {"jetFakes"}});
   }
 
-  bkgs_mm = {"W", "ZL", "TTL", "VVL"};
+  bkgs_mm = {"W", "TTL", "VVL", "QCD", "MUEMB"};
   std::cout << "[INFO] Considerung the following processes:\n";
   std::cout << "For mt channel : \n";
   for (unsigned int i = 0; i < bkgs.size(); i++)
@@ -187,14 +187,7 @@ int main(int argc, char **argv) {
       {100, "mm_control_region"},
   };
 
-  // Specify signal processes and masses
-  vector<string> sig_procs;
-  // STXS stage 0: ggH and VBF processes
-  if (embedding) {
-    sig_procs = {"EMB"};
-  } else {
-    sig_procs = {"ZTT"};
-  }
+  vector<string> sig_procs = {"EMB"};
   vector<string> masses = {"125"};
 
   // Create combine harverster object
@@ -229,6 +222,7 @@ int main(int argc, char **argv) {
             ".root",
         "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
     if (chn == "mt") {
+
       for (unsigned int i = 1; i <= cats[chn].size(); i++) {
         cb.cp()
             .channel({chn})
@@ -244,14 +238,13 @@ int main(int argc, char **argv) {
               << input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag +
                      postfix + ".root"
               << std::endl;
-    // TODO: Uncomment for check of mm fit to obtain start value for full fit.
-    if (chn == "mm") {
-        sig_procs = {"ZL"};
-        cb.cp().channel({chn}).bin_id({static_cast<int>(100)}).process(sig_procs).ExtractShapes(
-            input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix
-            + ".root",
-            "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
-    }
+    // // TODO: Uncomment for check of mm fit to obtain start value for full fit.
+    // if (chn == "mm") {
+    //     cb.cp().channel({chn}).bin_id({static_cast<int>(100)}).process(sig_procs).ExtractShapes(
+    //         input_dir[chn] + "htt_" + chn + ".inputs-sm-" + era_tag + postfix
+    //         + ".root",
+    //         "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC");
+    // }
   }
 
   // Delete processes with 0 yield

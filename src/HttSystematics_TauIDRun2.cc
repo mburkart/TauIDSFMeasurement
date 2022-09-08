@@ -367,14 +367,9 @@ if (not tauES) {
 
   // W
   cb.cp()
-      .channel({"mt"})
+      .channel({"mt", "mm"})
       .process({"W"})
       .AddSyst(cb, "CMS_htt_wjXsec", "lnN", SystMap<>::init(1.05));
-  // TODO: Check if this really should be uncorrelated
-  cb.cp()
-      .channel({"mm"})
-      .process({"W"})
-      .AddSyst(cb, "CMS_htt_wjXsec_mm", "lnN", SystMap<>::init(1.05));
 
   // Z
   if (embedding) {
@@ -396,7 +391,7 @@ if (not tauES) {
 
   // QCD
   cb.cp()
-      .channel({"mt"})
+      .channel({"mt", "mm"})
       .process({"QCD", "QCDEMB"})
       .AddSyst(cb, "CMS_ExtrapSSOS_$CHANNEL_$ERA", "lnN", SystMap<>::init(1.30));
 
@@ -487,8 +482,8 @@ if (not tauES) {
 
   // Embedded Normalization: No Lumi, Zjxsec information used, instead derived from data using dimuon selection efficiency
   cb.cp()
-      .channel({"mt"})
-      .process({"EMB"})
+      .channel({"mt", "mm"})
+      .process({"EMB", "MUEMB"})
       .AddSyst(cb, "CMS_htt_doublemutrg_$ERA", "lnN", SystMap<>::init(1.04));
 
   // TTbar contamination in embedded events: 10% shape uncertainty of assumed ttbar->tautau event shape
