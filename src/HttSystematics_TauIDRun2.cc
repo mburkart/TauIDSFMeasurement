@@ -103,16 +103,16 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
 
   // Muon ID
   cb.cp()
-      .channel({"mt"})
-      .process({"EMB"})
+      .channel({"mt", "mm"})
+      .process({"EMB", "MUEMB"})
       .AddSyst(cb, "CMS_eff_emb_m", "lnN", SystMap<>::init(1.014));
 
   // MC + embedded correlated uncertainty
 
   // Muon ID
   cb.cp()
-      .channel({"mt"})
-      .process(JoinStr({mc_processes, {"EMB"}}))
+      .channel({"mt", "mm"})
+      .process(JoinStr({mc_processes, {"EMB", "MUEMB"}}))
       .AddSyst(cb, "CMS_eff_m", "lnN", SystMap<>::init(1.014));
 
   // Control region uncertainties
@@ -492,10 +492,10 @@ if (not tauES) {
     .process({"EMB"})
     .AddSyst(cb, "CMS_htt_emb_ttbar_$ERA", "shape", SystMap<>::init(1.00));
 
-  cb.cp()
-      .channel({"mt"})
-      .process({"EMB"})
-      .AddSyst(cb, "CMS_htt_emb_tauID_$ERA", "lnN", SystMap<>::init(1.05));
+//   cb.cp()
+//       .channel({"mt"})
+//       .process({"EMB"})
+//       .AddSyst(cb, "CMS_htt_emb_tauID_$ERA", "lnN", SystMap<>::init(1.05));
 
   // Uncertainty of hadronic tau track efficiency correction
   // uncorrelated between eras
