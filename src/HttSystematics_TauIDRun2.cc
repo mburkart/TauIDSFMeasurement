@@ -91,8 +91,8 @@ void AddTauIDRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedding
 
   // 100% uncorrelated for embedded
   cb.cp()
-      .channel({"mt"})
-      .process({"EMB"})
+      .channel({"mt", "mm"})
+      .process({"EMB", "MUEMB"})
       .AddSyst(cb, "CMS_eff_trigger_emb_mt_$ERA", "shape", SystMap<>::init(1.00));
 
   // Muon ID
